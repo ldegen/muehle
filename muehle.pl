@@ -3,12 +3,8 @@
 :- use_module('bake.pl').
 
 arg0(N,T,Arg):-
-	(   ground(N)
-	->  M is N + 1,
-	    arg(M,T,Arg)
-	;   arg(M,T,Arg),
-	    N is M -1
-	).
+	when((ground(N);ground(M)),succ(N,M)),
+	arg(M,T,Arg).
 
 
 gegner(schwarz,weiß).
@@ -23,8 +19,8 @@ brett_set([Feld=Wert|FelderWerte],In,Out):-
 
 
 :- record konf(
-	      spieler:oneof([schwarz,weiß])=weiß,
-	      brett:compound=brett(
+	      spieler=weiß,
+	      brett=brett(
 			  frei,frei,frei,frei,
 			  frei,frei,frei,frei,
 			  frei,frei,frei,frei,
@@ -32,11 +28,11 @@ brett_set([Feld=Wert|FelderWerte],In,Out):-
 			  frei,frei,frei,frei,
 			  frei,frei,frei,frei
 			 ),
-	      weiß:compound=figuren(9,0),
-	      schwarz:compound=figuren(9,0)
+	      weiß=figuren(9,0),
+	      schwarz=figuren(9,0)
     ).
 feld(A):-
-	between(0,23,A).
+	between(1,24,A).
 
 feld_felge(Feld,Felge):-
 	feld_koordinaten(Feld,_,Felge).
@@ -84,7 +80,7 @@ benachbart_speiche(A,B):-
 	feld_felge(B,FgB),
 	1 is abs(FgA-FgB).
 
-:- bake(benachbart(A,B),(feld(A),feld(B),benachbart_(A,B))).
+:- bake(benachbart(A1,B1),(feld(A),feld(B),benachbart_(A,B),succ(A,A1),succ(B,B1))).
 
 spieler(Konf,Farbe):-
 	konf_spieler(Konf,Farbe).
@@ -94,29 +90,29 @@ brett(Konf,Brett):-
 
 frei(Konf,Feld):-
 	brett(Konf,Brett),
-	arg0(Feld,Brett,frei).
+	arg(Feld,Brett,frei).
 
 besetzt(Konf,Feld,Farbe):-
 	brett(Konf,Brett),
-	arg0(Feld,Brett,Farbe),
+	arg(Feld,Brett,Farbe),
 	Farbe \= frei.
 
-mühle(0,1,2).
-mühle(8,9,10).
-mühle(16,17,18).
-mühle(7,15,23).
-mühle(3,11,19).
-mühle(20,21,22).
-mühle(12,13,14).
-mühle(4,5,6).
-mühle(0,6,7).
-mühle(8,14,15).
-mühle(16,22,23).
-mühle(1,9,17).
-mühle(5,13,21).
-mühle(18,19,20).
-mühle(10,11,12).
-mühle(2,3,4).
+mühle(1,2,3).
+mühle(9,10,11).
+mühle(17,18,19).
+mühle(8,16,24).
+mühle(4,12,20).
+mühle(21,22,23).
+mühle(13,14,15).
+mühle(5,6,7).
+mühle(1,7,8).
+mühle(9,15,16).
+mühle(17,23,24).
+mühle(2,10,18).
+mühle(6,14,22).
+mühle(19,20,21).
+mühle(11,12,13).
+mühle(3,4,5).
 
 perm(A,B,C,A,B,C).
 perm(A,B,C,A,C,B).
@@ -125,15 +121,16 @@ perm(A,B,C,B,C,A).
 perm(A,B,C,C,A,B).
 perm(A,B,C,C,B,A).
 
-mühle_perm(A,B,C):-
+
+:- bake(mühle_perm(A,B,C),(
 	perm(A,B,C,A0,B0,C0),
-	mühle(A0,B0,C0).
+	mühle(A0,B0,C0))).
 
 in_mühle(Brett,Feld):-
 	mühle_perm(Feld,B,C),
-	arg0(Feld,Brett,Farbe),
-	arg0(B,Brett,Farbe),
-	arg0(C,Brett,Farbe).
+	arg(Feld,Brett,Farbe),
+	arg(B,Brett,Farbe),
+	arg(C,Brett,Farbe).
 
 start(Konf):-
 	default_konf(Konf).
@@ -285,19 +282,19 @@ format_figur(_,Farbe):-
 
 map_args([],_,[]).
 map_args([A|More],In,[V|Out]):-
-	arg0(A,In,V),
+	arg(A,In,V),
 	map_args(More,In,Out).
 
 
 write_brett(Brett):-
 	map_args([
-	    0, 1, 2,
-	    8, 9, 10,
-	    16,17,18,
-	    7,15,23,19,11,3,
-	    22,21,20,
-	    14,13,12,
-	    6,5,4
+	    1, 2, 3,
+	    9, 10, 11,
+	    17,18,19,
+	    8,16,24,20,12,4,
+	    23,22,21,
+	    13,12,11,
+	    5,4,3
 	],Brett,Figuren),
 	FormatLines =[
 	    '~F---------~F---------~F',

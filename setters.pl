@@ -10,8 +10,7 @@ system:term_expansion((:-setters(Name/Arity)),Clauses):-
 
 setter_clause(Name,Arity,N,Clause):-
 	atom_concat(Name,'_set',PredName),
-	Last is Arity - 1,
-	between(0,Last,N),
+	between(1,Arity,N),
 	functor(In,Name,Arity),
 	functor(Out,Name,Arity),
 	In=..[_|Ins],
@@ -28,7 +27,7 @@ setter_clauses(Name,Arity,Clauses):-
 	).
 
 set_elm([],_,_,[]).
-set_elm([_|Rest],0,V,[V|Rest]):-!.
+set_elm([_|Rest],1,V,[V|Rest]):-!.
 set_elm([Field|Rest0],N,V,[Field|Rest1]):-
 	M is N - 1,
 	set_elm(Rest0,M,V,Rest1).

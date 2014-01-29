@@ -5,8 +5,15 @@
 stellung_zug(Von,Zug,Nach):-
   zug(Von,Zug,Nach).
 
+:- dynamic stellung_wert_cache/3.
 stellung_wert(Stellung,Wert):-
-  heuristik(Stellung,weiß,Wert).
+	term_hash(Stellung,Hash),
+        (   stellung_wert_cache(Hash,Stellung,Wert),
+	    !
+	;   heuristik(Stellung,weiß,Wert),
+	    !,
+	    assert(stellung_wert_cache(Hash,Stellung,Wert))
+	).
 
 :- record cx(horizont=5,tiefe=0,alpha=(-9999999),beta=9999999).
 
@@ -44,11 +51,13 @@ spielende_erreicht(K):-
 	\+ stellung_zug(K,_,_).
 
 suche_wert(K0,Cx0,Zug-Wert):-
-  findall(Z-K,stellung_zug(K0,Z,K),Ks),
+  findall(H-(Z-K),(stellung_zug(K0,Z,K),stellung_wert(K,H)),Ks),
+  keysort(Ks,SortedKs),
+  reverse(SortedKs,ReverseSortedKs),
   runter(Cx0,Cx),
   ( ich(Cx0)
-  ->maximize(Ks,Cx,(nix-(-9999999)),Zug-Wert)
-  ; minimize(Ks,Cx,(nix-9999999),Zug-Wert)
+  ->maximize(ReverseSortedKs,Cx,(nix-(-9999999)),Zug-Wert)
+  ; minimize(ReverseSortedKs,Cx,(nix-9999999),Zug-Wert)
   ).
 
 
@@ -69,7 +78,7 @@ worsening(Cx0,WertMin,Zug-Wert,Cx,Zug-Wert):-
 	set_beta_of_cx(Wert,Cx0,Cx).
 
 maximize([],_,Zug-Wert,Zug-Wert).
-maximize([ZugK-K|Ks],Cx0,Zug0-Wert0,Zug-Wert):-
+maximize([_-(ZugK-K)|Ks],Cx0,Zug0-Wert0,Zug-Wert):-
   wert(K,Cx0,_-WertK),
   ( beta_cut(Cx0,ZugK-WertK,Cx,Zug1-Wert1)
   ->Rest=[]
@@ -84,7 +93,7 @@ maximize([ZugK-K|Ks],Cx0,Zug0-Wert0,Zug-Wert):-
 
 
 minimize([],_,Zug-Wert,Zug-Wert).
-minimize([ZugK-K|Ks],Cx0,Zug0-Wert0,Zug-Wert):-
+minimize([_-(ZugK-K)|Ks],Cx0,Zug0-Wert0,Zug-Wert):-
   wert(K,Cx0,_-WertK),
   ( alpha_cut(Cx0,ZugK-WertK,Cx,Zug1-Wert1)
   ->Rest=[]
