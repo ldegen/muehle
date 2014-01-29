@@ -1,72 +1,101 @@
 :- use_module(library(record)).
 
+
+
 stellung_zug(Von,Zug,Nach):-
   zug(Von,Zug,Nach).
 
 stellung_wert(Stellung,Wert):-
   heuristik(Stellung,weiß,Wert).
 
-horizont(5).
+:- record cx(horizont=5,tiefe=0,alpha=(-9999999),beta=9999999).
 
-suche_wert(K0,Tiefe0,Alpha,Beta,Zug-Wert):-
-  Tiefe is Tiefe0 + 1,
-  findall(Z-K,stellung_zug(K0,Z,K),Ks),
-  ( 0 is Tiefe0 mod 2
-  ->maximize(Ks,Tiefe,(nix-(-9999999)),Alpha,Beta,Zug-Wert)
-  ; minimize(Ks,Tiefe, (nix-9999999),Alpha,Beta,Zug-Wert)
-  ).
 
-wert(K,Tiefe,Alpha,Beta,Zug-Wert):-
-  horizont(Horizont),
-  ( Tiefe > Horizont
+ich(Cx):-
+	cx_tiefe(Cx,T),
+	0 is T mod 2.
+
+runter(Cx0,Cx):-
+	cx_tiefe(Cx0,T0),
+	T is T0 + 1,
+	set_tiefe_of_cx(T,Cx0,Cx).
+
+finde_zug(Stellung,Horizont,Zug,Wert):-
+	make_cx([horizont(Horizont)],Cx),
+	wert(Stellung,Cx,Zug-Wert).
+
+
+wert(K,Cx,Zug-Wert):-
+  ( horizont_erreicht(Cx)
   ->stellung_wert(K,Wert),
     Zug=horizont
-  ; \+ stellung_zug(K,_,_)
+  ; spielende_erreicht(K)
   ->stellung_wert(K,Wert),
     Zug=ende
-  ; suche_wert(K,Tiefe,Alpha,Beta,Zug-Wert)
+  ; suche_wert(K,Cx,Zug-Wert)
   ).
 
-maximize([],_,Zug-Wert,_,_,Zug-Wert).
-maximize([ZugK-K|Ks],Tiefe,Zug0-Wert0,Alpha0,Beta,Zug-Wert):-
-  wert(K,Tiefe,Alpha0,Beta,_-WertK),
-  ( WertK >= Beta
-  ->Rest=[],
-    Wert1=WertK,
-    Zug1=ZugK,
-    Alpha=Alpha0
-  ; WertK > Wert0
-  ->Rest=Ks,
-    Wert1 = WertK,
-    Zug1 = ZugK,
-    Alpha = WertK
+
+horizont_erreicht(Cx):-
+	cx_horizont(Cx,H),
+	cx_tiefe(Cx,T),
+	T>H.
+spielende_erreicht(K):-
+	\+ stellung_zug(K,_,_).
+
+suche_wert(K0,Cx0,Zug-Wert):-
+  findall(Z-K,stellung_zug(K0,Z,K),Ks),
+  runter(Cx0,Cx),
+  ( ich(Cx0)
+  ->maximize(Ks,Cx,(nix-(-9999999)),Zug-Wert)
+  ; minimize(Ks,Cx,(nix-9999999),Zug-Wert)
+  ).
+
+
+beta_cut(Cx,Zug-Wert,Cx,Zug-Wert):-
+	cx_beta(Cx,Beta),
+	Wert >= Beta.
+
+alpha_cut(Cx,Zug-Wert,Cx,Zug-Wert):-
+	cx_alpha(Cx,Alpha),
+	Wert =< Alpha.
+
+improvement(Cx0,WertMax,Zug-Wert,Cx,Zug-Wert):-
+	Wert > WertMax,
+	set_alpha_of_cx(Wert,Cx0,Cx).
+
+worsening(Cx0,WertMin,Zug-Wert,Cx,Zug-Wert):-
+	Wert < WertMin,
+	set_beta_of_cx(Wert,Cx0,Cx).
+
+maximize([],_,Zug-Wert,Zug-Wert).
+maximize([ZugK-K|Ks],Cx0,Zug0-Wert0,Zug-Wert):-
+  wert(K,Cx0,_-WertK),
+  ( beta_cut(Cx0,ZugK-WertK,Cx,Zug1-Wert1)
+  ->Rest=[]
+  ; improvement(Cx0,Wert0,ZugK-WertK,Cx,Zug1-Wert1)
+  ->Rest=Ks
   ; Rest=Ks,
     Wert1 = Wert0,
     Zug1 = Zug0,
-    Alpha = Alpha0
+    Cx=Cx0
   ),
-  maximize(Rest,Tiefe,Zug1-Wert1,Alpha,Beta,Zug-Wert).
+  maximize(Rest,Cx,Zug1-Wert1,Zug-Wert).
 
 
-minimize([],_,Zug-Wert,_,_,Zug-Wert).
-minimize([ZugK-K|Ks],Tiefe,Zug0-Wert0,Alpha,Beta0,Zug-Wert):-
-  wert(K,Tiefe,Alpha,Beta0,_-WertK),
-  ( WertK =< Alpha
-  ->Rest=[],
-    Wert1=WertK,
-    Zug1=ZugK,
-    Beta=Beta0
-  ; WertK < Wert0
-  ->Rest=Ks,
-    Wert1 = WertK,
-    Zug1=ZugK,
-    Beta=WertK
+minimize([],_,Zug-Wert,Zug-Wert).
+minimize([ZugK-K|Ks],Cx0,Zug0-Wert0,Zug-Wert):-
+  wert(K,Cx0,_-WertK),
+  ( alpha_cut(Cx0,ZugK-WertK,Cx,Zug1-Wert1)
+  ->Rest=[]
+  ; worsening(Cx0,Wert0,ZugK-WertK,Cx,Zug1-Wert1)
+  ->Rest=Ks
   ; Rest=Ks,
     Wert1 = Wert0,
     Zug1=Zug0,
-    Beta=Beta0
+    Cx=Cx0
   ),
-  minimize(Rest,Tiefe,Zug1-Wert1,Alpha,Beta,Zug-Wert).
+  minimize(Rest,Cx,Zug1-Wert1,Zug-Wert).
 
 
 
