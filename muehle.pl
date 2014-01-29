@@ -233,35 +233,6 @@ heuristik(Konf,Ich,G):-
 
 
 
-bewerten(Konf,MaxTiefe,Erg):-
-	spieler(Konf,Spieler),
-	bewerten(Konf,0,MaxTiefe,Spieler,Erg).
-
-bewerten(Konf,_,_,Farbe,gewonnen(9999999)):-
-	gewonnen(Konf,Farbe),
-	!.
-bewerten(Konf,_,_,Farbe,verloren(-9999999)):-
-	verloren(Konf,Farbe),
-	!.
-bewerten(Konf,Tiefe,MaxTiefe,Farbe,stop(N)):-
-	Tiefe >= MaxTiefe,
-	spieler(Konf,Farbe),
-	!,
-	heuristik(Konf,Farbe,N).
-bewerten(Konf,Tiefe,MaxTiefe,Farbe,Ergebnis):-
-	Tiefe1 is Tiefe +1,
-	(   spieler(Konf,Farbe)
-	->  MinMax=max(M,Zug)
-	;   MinMax=min(M,Zug)
-	),
-	aggregate_all(
-	    MinMax,
-	    (   zug(Konf,Zug,Konf1),
-		bewerten(Konf1,Tiefe1,MaxTiefe,Farbe,Ergebnis1),
-		arg(1,Ergebnis1,M)
-	    ),
-	    Ergebnis
-	).
 
 
 zug(Konf0,zug(Von,Nach,Geschlagen),Konf2):-
@@ -323,12 +294,6 @@ zeige(K):-
 	write_brett(B),
 	format('~w am Zug (~w)~n',[Farbe,Phase]).
 
-bewerte(K,Tiefe):-
-	bewerten(K,Tiefe,Erg),
-	arg(2,Erg,Zug),
-	zug(K,Zug,K1),
-	format('Ergebnis: ~w~n',[Erg]),
-	zeige(K1).
 
 
 
