@@ -59,6 +59,10 @@ end_of_file.  abort the game.
 Misc
 ----
 The dynamic predicate history/1 is used to keep a history of configurations in FIFO order.
+You can continue a previously interrupted match with something like this:
+~~~~
+?- history(A),!,partie_fortsetzen(A,weiß,4).
+~~~~
 
 Implementation Notes
 --------------------
