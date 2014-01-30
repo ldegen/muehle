@@ -1,21 +1,25 @@
+:- module('ki',[finde_zug/4]).
+
 :- use_module(library(record)).
+:- use_module('regeln.pl').
+:- use_module('heuristik.pl').
 
-
-
+stellung_spieler(St,Spieler):-
+	spieler(St,Spieler).
 stellung_zug(Von,Zug,Nach):-
   zug(Von,Zug,Nach).
 
-:- dynamic stellung_wert_cache/3.
-stellung_wert(Stellung,Wert):-
+:- dynamic stellung_wert_cache/4.
+stellung_wert(Stellung,Farbe,Wert):-
 	term_hash(Stellung,Hash),
-        (   stellung_wert_cache(Hash,Stellung,Wert),
+        (   stellung_wert_cache(Hash,Stellung,Farbe,Wert),
 	    !
-	;   heuristik(Stellung,weiß,Wert),
+	;   heuristik(Stellung,Farbe,Wert),
 	    !,
-	    assert(stellung_wert_cache(Hash,Stellung,Wert))
+	    assert(stellung_wert_cache(Hash,Stellung,Farbe,Wert))
 	).
 
-:- record cx(horizont=5,tiefe=0,alpha=(-9999999),beta=9999999).
+:- record cx(farbe=weiß,horizont=5,tiefe=0,alpha=(-9999999),beta=9999999).
 
 
 ich(Cx):-
@@ -28,16 +32,18 @@ runter(Cx0,Cx):-
 	set_tiefe_of_cx(T,Cx0,Cx).
 
 finde_zug(Stellung,Horizont,Zug,Wert):-
-	make_cx([horizont(Horizont)],Cx),
+	stellung_spieler(Stellung,Spieler),
+	make_cx([horizont(Horizont),farbe(Spieler)],Cx),
 	wert(Stellung,Cx,Zug-Wert).
 
 
 wert(K,Cx,Zug-Wert):-
+  cx_farbe(Cx,Farbe),
   ( horizont_erreicht(Cx)
-  ->stellung_wert(K,Wert),
+  ->stellung_wert(K,Farbe,Wert),
     Zug=horizont
   ; spielende_erreicht(K)
-  ->stellung_wert(K,Wert),
+  ->stellung_wert(K,Farbe,Wert),
     Zug=ende
   ; suche_wert(K,Cx,Zug-Wert)
   ).
@@ -51,7 +57,8 @@ spielende_erreicht(K):-
 	\+ stellung_zug(K,_,_).
 
 suche_wert(K0,Cx0,Zug-Wert):-
-  findall(H-(Z-K),(stellung_zug(K0,Z,K),stellung_wert(K,H)),Ks),
+  cx_farbe(Cx0,Farbe),
+  findall(H-(Z-K),(stellung_zug(K0,Z,K),stellung_wert(K,Farbe,H)),Ks),
   keysort(Ks,SortedKs),
   reverse(SortedKs,ReverseSortedKs),
   runter(Cx0,Cx),
