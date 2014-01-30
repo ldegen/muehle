@@ -35,45 +35,68 @@ zeige(K):-
 	format('~w am Zug (~w)~n',[Farbe,Phase]).
 
 
-
-partie_starten:-
+:- dynamic history/1.
+partie_starten(Farbe,Horizont):-
+	retractall(history(_)),
 	start(S0),
-	partie_fortsetzen(S0).
+	partie_fortsetzen(S0,Farbe,Horizont).
 
-partie_fortsetzen(S0):-
+partie_fortsetzen(S0,Farbe,Horizont):-
 	zeige(S0),
 	(   gewonnen(S0,Farbe)
 	->  format('~w hat gewonnen!~n',[Farbe])
-	;	spieler(S0,Farbe),
-		nachdenken(Farbe,S0,Zug),
-	    zug(S0,Zug,S1),
-	    partie_fortsetzen(S1)
+	;   nachdenken(S0,Farbe,Horizont,Zug),
+	    (	Zug=end_of_file
+	    ->	writeln(S0)
+	    ;	Zug=tipp(T)
+	    ->	finde_zug(S0,T,Tipp,Wert),
+		parse(Tipp2,Tipp),
+		format('ki empfiehlt: ~w ~w~n',[Tipp2,Wert]),
+		partie_fortsetzen(S0,Farbe,Horizont)
+	    ;	Zug = undo
+	    ->	retract(history(_)),retract(history(_)),
+		history(S1),
+		!,
+		partie_fortsetzen(S1,Farbe,Horizont)
+	    ;	zug(S0,Zug,S1)
+	    ->	asserta(history(S1)),
+		partie_fortsetzen(S1,Farbe,Horizont)
+	    ;	format('kein gültiger Befehl.',[]),
+		partie_fortsetzen(S0,Farbe,Horizont)
+	    )
 	).
 
-nachdenken(weiß,S,Zug):-
-	time(finde_zug(S,5,Zug,Wert)),
+nachdenken(S0,Farbe,Horizont,Zug):-
+	(   spieler(S0,Farbe)
+	->  zug_mensch(Zug)
+	;   zug_ki(S0,Horizont,Zug)
+	).
+
+zug_ki(S,Horizont,Zug):-
+	time(finde_zug(S,Horizont,Zug,Wert)),
 	parse(Zug2,Zug),
 	format('ki hat sich entschieden: ~w ~w~n',[Zug2,Wert]).
 
-nachdenken(schwarz,S,Zug):-
-	repeat,
+zug_mensch(Zug):-
 	catch(
-	    read(Zug0),_,
-	    (writeln('?!!'), fail  )
-	),
-	(   Zug0 == end_of_file
-	->  !,
-	    writeln(S)
-	;   parse(Zug0,Zug),zug(S,Zug,_)
-	->  !
-	;   writeln('versteh ich nicht, bitte nochmal'),
-	    fail
+	    (	read(Befehl),
+		parse(Befehl,Zug)
+	    ),
+	    _,
+	    Zug=nüscht
 	).
 
 parse((A-B,C),zug(A,B,C)):-integer(A),integer(B),integer(C),!.
 parse((A-B),zug(A,B,x)):-integer(A),integer(B),!.
 parse((B,C),zug(x,B,C)):-integer(B),integer(C),!.
 parse(B,zug(x,B,x)):-integer(B),!.
+parse(end_of_file,end_of_file):-!.
+parse(tipp(T),tipp(T)):-integer(T),!.
+parse(A,A).
+
+
+
+
 
 
 
