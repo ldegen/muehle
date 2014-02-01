@@ -10,11 +10,19 @@ stellung_zug(Von,Zug,Nach):-
   zug(Von,Zug,Nach).
 
 :- dynamic stellung_wert_cache/4.
+
+stellung_wert_berechnen(Stellung,Farbe,Wert):-
+	(   gewonnen(Stellung,Farbe)
+	->  Wert=9999999
+	;   verloren(Stellung,Farbe)
+	->  Wert=(-9999999)
+	;   heuristik(Stellung,Farbe,Wert)
+	).
 stellung_wert(Stellung,Farbe,Wert):-
 	term_hash(Stellung,Hash),
         (   stellung_wert_cache(Hash,Stellung,Farbe,Wert),
 	    !
-	;   heuristik(Stellung,Farbe,Wert),
+	;   stellung_wert_berechnen(Stellung,Farbe,Wert),
 	    !,
 	    assert(stellung_wert_cache(Hash,Stellung,Farbe,Wert))
 	).
