@@ -1,17 +1,16 @@
 muehle
 ======
 
-AI-Player for the Nine Man's Morris board game (German: "Mühle"), implemented in Prolog
+The Nine Men's Morris board game (German: "Mühle"), implemented in Prolog. Including a AI-oponent. Yay! :-)
 
-
-The Code is mostly in German for now, sorry for that. :-(
+The source code was originally written in German, I am currently translating it, please bear with me.
 
 News
 ----
 feb, 3th 2014: some updates
 - started translating the code to English
 - work started on having a simple REST frontend, so eventually we may enjoy some sort of web interface.
-- fixed some really stupid bugs that made that kept the ki from realizing its own inpending doom.
+- fixed some really stupid bugs that kept the AI from realizing its own defeat.
 - while addressing the fields through numbers helps with the implementation, I think I will adapt the
   WMD notation for the interface.
 
