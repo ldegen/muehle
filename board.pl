@@ -7,7 +7,8 @@
   mill/3,
   in_mill/2,
   board_field_piece/3,
-  write_board/1
+  write_board/1,
+  board_code/2
 ]).
 :- use_module('setters.pl').
 :- use_module('bake.pl').
@@ -18,6 +19,7 @@ arg0(N,T,Arg):-
 
 
 :- setters(board/24).
+
 empty_board(board(
               empty,empty,empty,empty,
               empty,empty,empty,empty,
@@ -27,6 +29,43 @@ empty_board(board(
               empty,empty,empty,empty
            )
          ).
+
+
+color_digit(empty,0).
+color_digit(white,1).
+color_digit(black,2).
+
+board_code(Board,Code):-
+	(   number(Code)
+	->  code_board(Code,Board)
+	;   aggregate_all(sum(X),(
+			      arg0(S,Board,Color),
+			      color_digit(Color,C),
+			      X is C * 3 ^ S
+			  ),Code)
+	).
+
+
+code_digits(0,_Base,[]):-!.
+code_digits(Code,Base,[Digit|Digits]):-
+	Digit is Code mod Base,
+	Rest is Code div Base,
+	code_digits(Rest,Base,Digits).
+
+
+code_board(Code,Board):-
+	code_digits(Code,3,Digits),
+	digits_pieces(Digits,1,Pieces),
+	empty_board(Board0),
+	board_set(Pieces,Board0,Board).
+
+
+digits_pieces([],_,[]).
+digits_pieces([Digit|Digits],N,[N=Color|Pieces]):-
+	color_digit(Color,Digit),
+	succ(N,M),
+	digits_pieces(Digits,M,Pieces).
+
 
 board_set([],In,In).
 board_set([Field=Player|FieldsPlayers],In,Out):-

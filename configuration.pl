@@ -9,7 +9,9 @@
 	      place_piece/4,
 	      swap_fields/4,
 	      next_player/2,
-	      status/4
+	      status/4,
+	      json_conf/2,
+	      conf_code/2
 	  ]).
 
 :- use_module('bake.pl').
@@ -76,6 +78,12 @@ desc_arg_name_type(N,N,any).
 :- bake(record_arg_name_type(R,A,N,T),record_arg_name_type_(R,A,N,T)).
 :- bake(record_constructor_name(R,CN),(current_record(R,_),atom_concat('make_',R,CN))).
 
+json_conf(Json,Cfg):-
+	(   ground(Json)
+	->  json_to_record(configuration,Json,Cfg)
+	;   record_to_json(Cfg,Json)
+	).
+
 construct(Type,Options,Record):-
 	record_constructor_name(Type,CN),
 	call(CN,Options,Record).
@@ -112,6 +120,30 @@ prop_option(Type,Name,Value,Option):-
 	;   Option =..[Name,Value]
 	).
 
+
+%%	--------------------------------
+
+conf_code(Cfg,StatsCode/BoardCode/PlayerCode):-
+	player(Cfg,Player),
+	board(Cfg,Board),
+	configuration_white(Cfg,StatusWhite),
+	configuration_black(Cfg,StatusBlack),
+	stats_code(StatusWhite,StatusBlack,StatsCode),
+	board(Cfg,Board),
+	board_code(Board,BoardCode),
+	player_code(Player,PlayerCode).
+
+player_code(white,1).
+player_code(black,2).
+
+stats_code(player_status(A,B),player_status(C,D),Code):-
+	(   var(Code)
+	->  Code is 1000*A+100*B+10*C+D
+	;   D is Code mod 10,
+	    C is Code div 10 mod 10,
+	    B is Code div 100 mod 10,
+	    A is Code div 1000 mod 10
+	).
 
 %%	--------------------------------
 
