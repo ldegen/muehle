@@ -7,6 +7,17 @@ The source code was originally written in German, I am currently translating it,
 
 News
 ----
+feb, 10th 2014:
+- translation to English almost done
+  The interactive toplevel and the ai code is not yet translated, so I keep the old german code files for now.
+- The record term for representing game state is usefull as an internal representation, but does not look well
+  in for instance an URL. I found a more compact schema that basically interpretes the 24 Board positions as
+  digits of a base-3 integer(0: empty, 1: white, 2: black); with this 
+  it is possible to write any board configuration as an integer between
+  0 (empty board) and 3^24-1 (the whole board full of black pieces).
+  Add 4 decimal digits to represent the counters and another boolean (actually I stick with {1,2} for consistency)
+  and you end up with something like 6070/94143329731/2 to represent the configurationafter a7,b6,d6,f6,e4.
+
 feb, 3th 2014: some updates
 - started translating the code to English
 - work started on having a simple REST frontend, so eventually we may enjoy some sort of web interface.
