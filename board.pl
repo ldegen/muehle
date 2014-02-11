@@ -146,6 +146,7 @@ perm(A,B,C,C,B,A).
 in_mill(Board,Field):-
 	mill_perm(Field,B,C),
 	arg(Field,Board,Player),
+        Player \= empty,
 	arg(B,Board,Player),
 	arg(C,Board,Player).
 

@@ -203,7 +203,8 @@ next_player(Cfg0,Cfg1):-
 	set_player_of_configuration(B,Cfg0,Cfg1).
 
 status(Cfg,Player,Unused,Lost):-
-	make_player_status([unused(Unused),lost(Lost)],Status),
+        player_status_unused(Status,Unused),
+        player_status_lost(Status,Lost),
 	configuration_data(Player,Cfg,Status).
 
 

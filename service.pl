@@ -43,7 +43,7 @@ handle_cfg_get(Request):-
 handle_cfg_post(Request):-
 	http_read_data(Request,Atom,[to(atom)]),
 	request_cfg(Request,Cfg,_),
-	handle_command(Cmd,Cfg)
+	handle_command(Cmd,Cfg).
 
 
 
